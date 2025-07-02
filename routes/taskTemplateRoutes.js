@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { TaskTemplate } = require('../models'); // Assuming index.js in models exports TaskTemplate
 const { protect, authorize } = require('../middleware/authMiddleware'); // Adjust path if necessary
+const SeasonSnapshot = require('../models/SeasonSnapshot');
+const mongoose = require('mongoose');
 
 // Helper function to validate alphabetical order of preceding tasks
 function validatePrecedingOrderAlphabetical(currentOrder, precedingTasksArray) {
@@ -286,6 +288,42 @@ router.patch('/:id/toggle-active', protect, authorize(['Admin']), async (req, re
         return res.status(400).json({ message: error.message });
     }
     res.status(500).json({ message: 'Server error while toggling active status' });
+  }
+});
+
+// @route   DELETE /api/task-templates/:id
+// @desc    Delete a task template
+// @access  Admin
+router.delete('/:id', protect, authorize(['Admin']), async (req, res) => {
+  try {
+    const template = await TaskTemplate.findById(req.params.id);
+    if (!template) {
+      return res.status(404).json({ message: 'Task template not found' });
+    }
+
+    // Safety Check 1: Ensure the template is not used in any season snapshots.
+    const snapshotInUse = await SeasonSnapshot.findOne({ 'tasks.order': template.order });
+    if (snapshotInUse) {
+      return res.status(400).json({ message: 'Cannot delete this template because it is already used in at least one season. Please deactivate it instead.' });
+    }
+
+    // Safety Check 2: Ensure the template is not a dependency for other templates.
+    const dependentTemplate = await TaskTemplate.findOne({ defaultPrecedingTasks: template.order });
+    if (dependentTemplate) {
+      return res.status(400).json({
+        message: `Cannot delete this template because it is a preceding task for another template (e.g., '${dependentTemplate.name}'). Please remove the dependency first.`
+      });
+    }
+
+    await TaskTemplate.deleteOne({ _id: req.params.id });
+
+    res.json({ message: 'Task template deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting task template:', error);
+    if (error.kind === 'ObjectId') {
+        return res.status(404).json({ message: 'Task template not found (invalid ID format)' });
+    }
+    res.status(500).json({ message: 'Server error while deleting task template' });
   }
 });
 
