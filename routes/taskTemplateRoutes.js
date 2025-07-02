@@ -301,13 +301,7 @@ router.delete('/:id', protect, authorize(['Admin']), async (req, res) => {
       return res.status(404).json({ message: 'Task template not found' });
     }
 
-    // Safety Check 1: Ensure the template is not used in any season snapshots.
-    const snapshotInUse = await SeasonSnapshot.findOne({ 'tasks.order': template.order });
-    if (snapshotInUse) {
-      return res.status(400).json({ message: 'Cannot delete this template because it is already used in at least one season. Please deactivate it instead.' });
-    }
-
-    // Safety Check 2: Ensure the template is not a dependency for other templates.
+    // Safety Check: Ensure the template is not a dependency for other templates.
     const dependentTemplate = await TaskTemplate.findOne({ defaultPrecedingTasks: template.order });
     if (dependentTemplate) {
       return res.status(400).json({
