@@ -56,7 +56,7 @@ exports.notifyNewTaskAssignment = async (task, season) => {
           <li><strong>Target End Date:</strong> ${task.targetEndDate ? new Date(task.targetEndDate).toLocaleDateString() : 'N/A'}</li>
         </ul>
         <p>Please login to the Production Timeline system to view and manage your tasks.</p>
-        <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/tasks/${task._id}">View Task Details</a></p>
+        <p><a href="${process.env.FRONTEND_URL || 'http://10.0.1.249:3005'}/tasks/${task._id}">View Task Details</a></p>
       `;
       await sendEmail(user.email, subject, emailBody);
     }
@@ -92,7 +92,7 @@ exports.notifyPrecedingTaskCompleted = async (nextTask, completedTask, season) =
           <li><strong>Target Start Date:</strong> ${nextTask.targetStartDate ? new Date(nextTask.targetStartDate).toLocaleDateString() : 'N/A'}</li>
           <li><strong>Target End Date:</strong> ${nextTask.targetEndDate ? new Date(nextTask.targetEndDate).toLocaleDateString() : 'N/A'}</li>
         </ul>
-        <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/tasks/${nextTask._id}">View Task Details</a></p>
+        <p><a href="${process.env.FRONTEND_URL || 'http://10.0.1.249:3005'}/tasks/${nextTask._id}">View Task Details</a></p>
       `;
       await sendEmail(user.email, subject, emailBody);
     }
@@ -129,7 +129,7 @@ exports.notifyTaskBlocked = async (blockedTask, season, blockingUser) => {
           <li><strong>Blocked by:</strong> ${blockingUserName}</li>
         </ul>
         <p>Please review the task and take necessary action.</p>
-        <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/tasks/${blockedTask._id}">View Task Details</a></p>
+        <p><a href="${process.env.FRONTEND_URL || 'http://10.0.1.249:3005'}/tasks/${blockedTask._id}">View Task Details</a></p>
       `;
       await sendEmail(recipient.email, subject, emailBody);
     }
