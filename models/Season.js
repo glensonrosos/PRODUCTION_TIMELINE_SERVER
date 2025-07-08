@@ -20,7 +20,7 @@ const SeasonSchema = new mongoose.Schema({
   // 'dateCreated' is handled by timestamps: true
   requireAttention: {
     type: [String],
-    enum: ['PD', 'P&S', 'AM', 'QA', 'Logistics', 'Production'], // Include all possible department codes
+    enum: ['PD', 'P&S', 'AM', 'QA', 'Logistics', 'Production', 'IT'], // Include all possible department codes
     default: []
   },
   createdBy: {
