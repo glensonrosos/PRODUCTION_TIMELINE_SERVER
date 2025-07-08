@@ -7,10 +7,17 @@ const mongoose = require('mongoose');
 
 // Helper function to validate alphabetical order of preceding tasks
 function validatePrecedingOrderAlphabetical(currentOrder, precedingTasksArray) {
-  if (!precedingTasksArray || precedingTasksArray.length === 0) {
-    return { isValid: true, invalidTasks: [] };
-  }
-  const invalidTasks = precedingTasksArray.filter(ptOrder => ptOrder >= currentOrder);
+  const invalidTasks = precedingTasksArray.filter(precedingOrder => {
+    // Correctly compare Excel-style column names (e.g., 'Z' < 'AA')
+    if (precedingOrder.length > currentOrder.length) {
+      return true; // e.g., 'AA' is a dependency of 'Z', which is invalid
+    }
+    if (precedingOrder.length < currentOrder.length) {
+      return false; // e.g., 'Z' is a dependency of 'AA', which is valid
+    }
+    // If lengths are equal, a direct string comparison is correct
+    return precedingOrder >= currentOrder;
+  });
   return {
     isValid: invalidTasks.length === 0,
     invalidTasks
