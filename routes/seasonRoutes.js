@@ -247,7 +247,7 @@ router.get('/:id/export', protect, exportSeasonToExcel);
 router.put('/:id/status', protect, authorize('Admin', 'Planner'), updateSeasonStatus);
 
 router.put('/:id', protect, authorize('Planner', 'Admin'), async (req, res) => {
-  const { name, buyerId, status, requireAttention } = req.body;
+  const { name, buyer, status, requireAttention } = req.body;
 
   try {
     let season = await Season.findById(req.params.id);
@@ -256,17 +256,34 @@ router.put('/:id', protect, authorize('Planner', 'Admin'), async (req, res) => {
     }
 
     if (name && name !== season.name) {
-      const anotherSeasonWithSameName = await Season.findOne({ name: name, _id: { $ne: season._id } });
-      if (anotherSeasonWithSameName) {
-        return res.status(400).json({ message: `Another season with name '${name}' already exists.` });
+      const existingSeason = await Season.findOne({ name: name, _id: { $ne: req.params.id } });
+      if (existingSeason) {
+        return res.status(400).json({ message: `Season with name '${name}' already exists.` });
       }
       season.name = name;
+      await logActivity({
+        seasonId: season._id,
+        user: req.user,
+        action: 'UPDATE_SEASON_NAME',
+        details: `Season name changed to "${name}"`
+      });
     }
-    if (buyerId) {
-        const buyerExists = await Buyer.findById(buyerId);
-        if (!buyerExists) return res.status(400).json({ message: 'Invalid Buyer ID' });
-        season.buyer = buyerId;
+
+    // Handle buyer update
+    if (buyer && buyer.toString() !== season.buyer.toString()) {
+      const buyerExists = await Buyer.findById(buyer);
+      if (!buyerExists) {
+        return res.status(400).json({ message: 'Invalid Buyer ID provided.' });
+      }
+      season.buyer = buyer;
+      await logActivity({
+        seasonId: season._id,
+        user: req.user,
+        action: 'UPDATE_SEASON_BUYER',
+        details: `Season buyer changed to "${buyerExists.name}"`
+      });
     }
+
     if (status) {
         // Add validation for allowed status values if not using enum strictly in model
         season.status = status;
@@ -527,6 +544,15 @@ router.delete('/:seasonId/tasks/:taskId/attachments/:attachmentId', protect, asy
 
     const attachmentIndex = task.attachments.findIndex(a => String(a._id) === attachmentId);
     if (attachmentIndex === -1) return res.status(404).json({ message: 'Attachment not found' });
+
+    // --- Authorization Check ---
+    const userIsAdminOrPlanner = user.role === 'Admin' || user.role === 'Planner';
+    const userDepartment = await Department.findById(user.department).select('code');
+    const userIsResponsible = userDepartment && task.responsible.includes(userDepartment.code);
+
+    if (!userIsAdminOrPlanner && !userIsResponsible) {
+      return res.status(403).json({ message: 'Forbidden: You are not authorized to delete attachments for this task.' });
+    }
 
     const [deletedAttachment] = task.attachments.splice(attachmentIndex, 1);
 
