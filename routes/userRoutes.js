@@ -181,4 +181,26 @@ router.delete('/:id', protect, authorize('Admin'), async (req, res) => {
   }
 });
 
+// @route   PUT /api/users/:id/reset-password
+// @desc    Reset a user's password (Admin only)
+// @access  Admin
+router.put('/:id/reset-password', protect, authorize('Admin'), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Set the new password. The pre-save hook in the User model will handle hashing.
+    user.password = 'password1234';
+    await user.save();
+
+    res.json({ message: `Password for user ${user.username} has been reset to 'password1234'.` });
+
+  } catch (error) {
+    console.error('Admin reset password error:', error.message);
+    res.status(500).send('Server error');
+  }
+});
+
 module.exports = router;

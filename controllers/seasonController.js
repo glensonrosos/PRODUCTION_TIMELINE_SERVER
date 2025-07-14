@@ -73,6 +73,65 @@ const exportSeasonToExcel = async (req, res) => {
       return res.status(404).json({ message: 'Season not found.' });
     }
 
+    // Helper function to calculate the reference timeline
+    const calculateReferenceTimeline = (tasks, seasonCreationDate) => {
+      const timeline = new Map();
+      if (!tasks || tasks.length === 0) return timeline;
+
+      const tasksByOrder = new Map(tasks.map(task => [task.order, task]));
+      const sortedTasksForCalc = [...tasks].sort((a, b) => {
+        if (a.order.length < b.order.length) return -1;
+        if (a.order.length > b.order.length) return 1;
+        return a.order.localeCompare(b.order);
+      });
+
+      let tasksToProcess = sortedTasksForCalc.length;
+      let iterations = 0;
+      const MAX_ITERATIONS = tasksToProcess + 5;
+
+      while (tasksToProcess > 0 && iterations < MAX_ITERATIONS) {
+        let processedInThisIteration = 0;
+        sortedTasksForCalc.forEach(task => {
+          if (timeline.has(task._id.toString())) return;
+
+          let canCalculate = true;
+          let maxPrecedingEndDate = moment(seasonCreationDate);
+
+          if (task.precedingTasks && task.precedingTasks.length > 0) {
+            for (const precedingOrder of task.precedingTasks) {
+              const precedingTask = tasksByOrder.get(precedingOrder);
+              if (precedingTask && timeline.has(precedingTask._id.toString())) {
+                const precedingEndDate = timeline.get(precedingTask._id.toString()).end;
+                if (moment(precedingEndDate).isAfter(maxPrecedingEndDate)) {
+                  maxPrecedingEndDate = moment(precedingEndDate);
+                }
+              } else {
+                canCalculate = false;
+                break;
+              }
+            }
+          }
+
+          if (canCalculate) {
+            const startDate = maxPrecedingEndDate;
+            const endDate = moment(startDate).add(task.leadTime, 'days');
+            timeline.set(task._id.toString(), { start: startDate.toDate(), end: endDate.toDate() });
+            processedInThisIteration++;
+          }
+        });
+
+        tasksToProcess -= processedInThisIteration;
+        iterations++;
+        if (processedInThisIteration === 0 && tasksToProcess > 0) {
+          console.error("Could not resolve all task dependencies for reference timeline in export.");
+          break;
+        }
+      }
+      return timeline;
+    };
+
+    const referenceTimeline = calculateReferenceTimeline(snapshot.tasks, season.createdAt);
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(`${season.name} - Details`);
 
@@ -121,6 +180,7 @@ const exportSeasonToExcel = async (req, res) => {
     const headerRow = worksheet.addRow([
       'Order',
       'Task Name',
+      'Timeline Reference',
       'Responsible Dept.',
       'Lead Time',
       'Preceding Tasks',
@@ -151,7 +211,15 @@ const exportSeasonToExcel = async (req, res) => {
     headerRow.height = 25;
 
     // --- Task Data ---
-    snapshot.tasks.forEach(task => {
+    const sortedTasks = snapshot.tasks.sort((a, b) => {
+      const orderA = a.order;
+      const orderB = b.order;
+      if (orderA.length < orderB.length) return -1;
+      if (orderA.length > orderB.length) return 1;
+      return orderA.localeCompare(orderB);
+    });
+
+    sortedTasks.forEach(task => {
       let dateSpentFormatted = 'N/A';
       // Calculate difference against the planned end date, ignoring time of day.
       if (task.actualCompletion && task.computedDates.end) {
@@ -169,9 +237,18 @@ const exportSeasonToExcel = async (req, res) => {
         }
       }
 
+      const timelineInfo = referenceTimeline.get(task._id.toString());
+      let timelineReferenceText = '...';
+      if (timelineInfo && timelineInfo.start && timelineInfo.end) {
+        const start = moment(timelineInfo.start).format('DD-MMM-YY');
+        const end = moment(timelineInfo.end).format('DD-MMM-YY');
+        timelineReferenceText = `${start} - ${end}`;
+      }
+
       const row = worksheet.addRow([
         task.order,
         task.name,
+        timelineReferenceText,
         task.responsible.join(', '),
         task.leadTime,
         task.precedingTasks.join(', '),
@@ -196,16 +273,17 @@ const exportSeasonToExcel = async (req, res) => {
     // --- Column Widths ---
     worksheet.getColumn('A').width = 10;
     worksheet.getColumn('B').width = 40;
-    worksheet.getColumn('C').width = 20;
-    worksheet.getColumn('D').width = 15; // Lead Time
-    worksheet.getColumn('E').width = 20; // Preceding Tasks
-    worksheet.getColumn('F').width = 15; // Status
-    worksheet.getColumn('G').width = 15; // Start Date
-    worksheet.getColumn('H').width = 15; // End Date
-    worksheet.getColumn('I').width = 20; // Actual Completion
-    worksheet.getColumn('J').width = 15; // Date Spent
-    worksheet.getColumn('K').width = 15; // Attachment
-    worksheet.getColumn('L').width = 50; // Remarks
+    worksheet.getColumn('C').width = 25; // Timeline Reference
+    worksheet.getColumn('D').width = 20; // Responsible Dept.
+    worksheet.getColumn('E').width = 15; // Lead Time
+    worksheet.getColumn('F').width = 20; // Preceding Tasks
+    worksheet.getColumn('G').width = 15; // Status
+    worksheet.getColumn('H').width = 15; // Start Date
+    worksheet.getColumn('I').width = 15; // End Date
+    worksheet.getColumn('J').width = 20; // Actual Completion
+    worksheet.getColumn('K').width = 15; // Date Spent
+    worksheet.getColumn('L').width = 15; // Attachment
+    worksheet.getColumn('M').width = 50; // Remarks
 
     // --- Send to Client ---
     res.setHeader(
