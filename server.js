@@ -23,6 +23,7 @@ const seasonRoutes = require('./routes/seasonRoutes'); // Already added, but goo
 const taskRoutes = require('./routes/taskRoutes');
 const taskTemplateRoutes = require('./routes/taskTemplateRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const logRoutes = require('./routes/logRoutes');
 
 // Basic Route
 app.get('/', (req, res) => {
@@ -39,6 +40,7 @@ app.use('/api/seasons/:seasonId/tasks', taskRoutes); // For tasks related to a s
 app.use('/api/tasks', taskRoutes); // For general task operations like GET /api/tasks/:taskId
 app.use('/api/task-templates', taskTemplateRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/logs', logRoutes);
 
 
 // MongoDB Connection
