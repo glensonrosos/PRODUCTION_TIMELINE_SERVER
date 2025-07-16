@@ -133,7 +133,11 @@ const exportSeasonToExcel = async (req, res) => {
     const referenceTimeline = calculateReferenceTimeline(snapshot.tasks, season.createdAt);
 
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet(`${season.name} - Details`);
+    // Sanitize the sheet name: remove invalid characters and truncate to 31 chars for Excel compatibility.
+    const sanitizedSheetName = `${season.name} - Details`
+      .replace(/[*?:\\/\[\]]/g, '_') // Replace invalid characters with an underscore
+      .substring(0, 31);
+    const worksheet = workbook.addWorksheet(sanitizedSheetName);
 
     // --- Header Section ---
     worksheet.mergeCells('A1:D1');
