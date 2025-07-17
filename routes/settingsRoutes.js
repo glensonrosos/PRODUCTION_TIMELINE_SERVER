@@ -100,7 +100,7 @@ router.post('/resend-notifications', protect, authorize('Planner', 'Admin'), asy
         <p>The following task(s) are ready for your department's action: <strong  style="color:red;">${actionableTasks.join(', ')}</strong>.</p>
         <p>Please <a href=\"${seasonUrl}\">click here</a> to view the season details and take the necessary actions.</p>
         <p>Thank you,</p>
-        <p>PEBA Production Timeline System</p>
+        <p>PRODUCTION Timeline System</p>
         <p style="font-size:10px;color:#666;">Copyright © 2025 GLENSON_ENCODE SYSTEMS</p>
       `;
 

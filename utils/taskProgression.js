@@ -256,7 +256,7 @@ async function updateTaskAndProgressSeason(userId, snapshot, taskId, updateData)
                 <p>Task: <strong style="color:red;">${subsequentTask.name}</strong></p>
                 <p>Please <a href="${seasonUrl}">click here</a> to view the season details.</p>
                 <p>Thank you,</p>
-                <p>PEBA Production Timeline System</p>
+                <p>PRODUCTION Timeline System</p>
                 <p style="font-size:10px;color:#666;">Copyright © 2025 GLENSON_ENCODE SYSTEMS</p>
               `;
 

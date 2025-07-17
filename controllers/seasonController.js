@@ -142,7 +142,7 @@ const exportSeasonToExcel = async (req, res) => {
     // --- Header Section ---
     worksheet.mergeCells('A1:D1');
     const titleCell = worksheet.getCell('A1');
-    titleCell.value = 'Production Timeline Report';
+    titleCell.value = 'PRODUCTION Timeline Report';
     titleCell.font = { name: 'Calibri', size: 18, bold: true };
     titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
     worksheet.getRow(1).height = 30;
