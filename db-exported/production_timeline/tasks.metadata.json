@@ -1,1 +1,0 @@
-{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"season":{"$numberInt":"1"},"orderSequence":{"$numberInt":"1"}},"name":"season_1_orderSequence_1","background":true,"unique":true}],"uuid":"e2089ed321064ae89437fe74c896cc75","collectionName":"tasks","type":"collection"}

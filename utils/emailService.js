@@ -20,7 +20,7 @@ const transporter = nodemailer.createTransport({
 const sendEmail = async ({ seasonId, to, subject, html }) => {
     try {
     const info = await transporter.sendMail({
-      from: `"PEBA Production Timeline" <${process.env.EMAIL_FROM}>`,
+      from: `"PRODUCTION Timeline" <${process.env.EMAIL_FROM}>`,
       to,
       subject,
       html,

@@ -55,8 +55,13 @@ exports.notifyNewTaskAssignment = async (task, season) => {
           <li><strong>Target Start Date:</strong> ${task.targetStartDate ? new Date(task.targetStartDate).toLocaleDateString() : 'N/A'}</li>
           <li><strong>Target End Date:</strong> ${task.targetEndDate ? new Date(task.targetEndDate).toLocaleDateString() : 'N/A'}</li>
         </ul>
+<<<<<<< HEAD
         <p>Please login to the Production Timeline system to view and manage your tasks.</p>
         <p><a href="${process.env.FRONTEND_URL || 'http://10.0.1.249:3005'}/tasks/${task._id}">View Task Details</a></p>
+=======
+        <p>Please login to the PRODUCTION Timeline system to view and manage your tasks.</p>
+        <p><a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/tasks/${task._id}">View Task Details</a></p>
+>>>>>>> 78a48971665fc64eeb40164e80bfb0afd31c4874
       `;
       await sendEmail(user.email, subject, emailBody);
     }
